@@ -1,16 +1,15 @@
-from db_settings import Base
-import sqlalchemy as sa
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
+from settings import Base
 
+# TODO: relationships
 
 class Response(Base):
-    __tablename__ = "responses"
-
-    id = sa.Column(sa.Integer, primary_key=True, autoincrement=True, comment="Идентификатор отклика")
-    user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id'), comment="Идентификатор пользователя")
-    job_id = sa.Column(sa.Integer, sa.ForeignKey('jobs.id'), comment="Идентификатор вакансии")
-
-    # добавьте ваши колонки сюда
+    __tablename__ = 'Responses'
+    id = Column(Integer, comment="ID отклика", primary_key=True)
+    job_id = Column(Integer, ForeignKey("Jobs.id"), comment="ID вакансии")
+    user_id = Column(Integer, ForeignKey("Users.id"), comment="ID соискателя")
+    message = Column(String, comment="Сообщение")
 
     user = relationship("User", back_populates="responses")
     job = relationship("Job", back_populates="responses")

@@ -1,23 +1,21 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from queries import user as user_queries
-
-from schemas import TokenSchema, LoginSchema
-from core.security import verify_password, create_access_token
-from dependencies import get_db
-
+from schemas import LoginSchema, TokenSchema
+from queries import users as user_queries
+from dependencies import get_session
+from core import verify_password, create_access_token
+from core.exceptions import client_exception, credentials_exception
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("", response_model=TokenSchema)
-async def login(login: LoginSchema, db: AsyncSession = Depends(get_db)):
-    user = await user_queries.get_by_email(db=db, email=login.email)
+@router.post("/", response_model=TokenSchema)
+async def login(login: LoginSchema, session: AsyncSession = Depends(get_session)):
+    db_user = await user_queries.get_by_email(session = session, u_email = login.email)
+    if db_user is None:
+        raise client_exception
+    if not verify_password(login.password, db_user.hashed_password):
+        raise credentials_exception
+    return TokenSchema(access_token=create_access_token({"sub": db_user.email}),
+                       token_type="Bearer")
 
-    if user is None or not verify_password(login.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Некорректное имя пользователя или пароль")
-
-    return TokenSchema(
-        access_token=create_access_token({"sub": user.email}),
-        token_type="Bearer"
-    )

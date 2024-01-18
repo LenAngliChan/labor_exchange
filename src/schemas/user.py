@@ -1,35 +1,38 @@
-import datetime
-from typing import Optional
-from pydantic import BaseModel, EmailStr, validator, constr
+from pydantic import BaseModel, EmailStr, constr, ConfigDict, model_validator
+from datetime import datetime
 
+# TODO: использовать reuse validators (см документацию Pydantic)
 
 class UserSchema(BaseModel):
-    id: Optional[str] = None
+    id: int
     name: str
     email: EmailStr
-    hashed_password: str
-    is_company: bool
-    created_at: datetime.datetime
+    is_company: bool = False
+    created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True, frozen=True)
 
-
-class UserUpdateSchema(BaseModel):
-    name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    is_company: Optional[bool] = None
-
-
-class UserInSchema(BaseModel):
+class UserCreateSchema(BaseModel):
     name: str
     email: EmailStr
     password: constr(min_length=8)
     password2: str
     is_company: bool = False
 
-    @validator("password2")
-    def password_match(cls, v, values, **kwargs):
-        if 'password' in values and v != values["password"]:
+    @model_validator(mode='after')
+    def password_match(self):
+        if self.password != self.password2:
             raise ValueError("Пароли не совпадают!")
-        return True
+        return self
+
+class UserUpdateSchema(BaseModel):
+    name: str
+    is_company: bool = False
+    password: constr(min_length=8)
+    password2: str
+
+    @model_validator(mode='after')
+    def password_match(self):
+        if self.password != self.password2:
+            raise ValueError("Пароли не совпадают!")
+        return self

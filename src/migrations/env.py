@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncEngine
-from db_settings import DB_NAME, DB_HOST, DB_PASS, DB_USER, Base
+from settings.database import DB_NAME, DB_HOST, DB_PASS, DB_USER, Base
 
 from alembic import context
 from models import *

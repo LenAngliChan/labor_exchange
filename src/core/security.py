@@ -1,25 +1,28 @@
-import datetime
-from fastapi import Request, HTTPException, status
-from fastapi.security import HTTPBearer
 from passlib.context import CryptContext
 from jose import jwt
-from .config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
+from core.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
+from fastapi import Request
+from fastapi.security import HTTPBearer
+from datetime import datetime, timedelta, timezone
+from core.exceptions import token_exception
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# TODO: current_user + auth
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def verify_password(password: str, hash: str) -> bool:
-    return pwd_context.verify(password, hash)
+def verify_password(password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(password, hashed_password)
 
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    to_encode.update({"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, ALGORITHM)
 
 
 def decode_access_token(token: str):
@@ -36,11 +39,10 @@ class JWTBearer(HTTPBearer):
 
     async def __call__(self, request: Request):
         credentials = await super(JWTBearer, self).__call__(request)
-        exp = HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid auth token")
         if credentials:
             token = decode_access_token(credentials.credentials)
             if token is None:
-                raise exp
+                raise token_exception
             return credentials.credentials
         else:
-            raise exp
+            raise token_exception

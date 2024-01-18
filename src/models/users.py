@@ -1,20 +1,16 @@
-import datetime
-
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, func
 from sqlalchemy.orm import relationship
-
-from db_settings import Base
-import sqlalchemy as sa
+from settings import Base
 
 
 class User(Base):
-    __tablename__ = "users"
-
-    id = sa.Column(sa.Integer, primary_key=True, autoincrement=True, comment="Идентификатор задачи", unique=True)
-    email = sa.Column(sa.String, comment="Email адрес", unique=True)
-    name = sa.Column(sa.String, comment="Имя пользователя")
-    hashed_password = sa.Column(sa.String, comment="Зашифрованный пароль")
-    is_company = sa.Column(sa.Boolean, comment="Флаг компании")
-    created_at = sa.Column(sa.DateTime, comment="Время создания записи", default=datetime.datetime.utcnow)
+    __tablename__ = 'Users'
+    id = Column(Integer, comment = 'ID пользователя', primary_key=True)
+    email = Column(String, comment = 'Эл.Адресс пользователя', unique=True, nullable=False)
+    name = Column(String, comment = 'Имя пользователя', nullable=False)
+    hashed_password = Column(String, comment = 'Пароль пользователя', nullable=False)
+    is_company = Column(Boolean, comment = 'Флаг компании', nullable=False)
+    created_at = Column(DateTime, comment = 'Дата создания', server_default=func.now(), nullable=False)
 
     jobs = relationship("Job", back_populates="user")
     responses = relationship("Response", back_populates="user")
